@@ -1,122 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import "./App.css";
+import React from "react";
+import { useState } from "react";
+import { ethers, BrowserProvider } from "ethers";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Import the json-file from the ABI
+import Messenger from "./artifacts/contracts/Messenger.sol/Messenger.json";
+
+// Store the contract address in a variable
+const messengerContractAddress = "0x941ff96e78145897dEdae0AE60879ae09601A873"; // Deployed to testnet
+
+const App = () => {
+    // Store message in a local state
+    const [message, setMessageValue] = useState();
+
+    // Request access to User's MetaMask account
+    const requestAccount = async () => {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+    };
+
+    // Function for retrieving message value from smart contract.
+    const getMessage = async () => {
+        if (typeof window.ethereum !== "undefined") {
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(
+            messengerContractAddress,
+            Messenger.abi,
+            web3Provider
+        );
+        try {
+            const data = await contract.getMessage();
+            console.log(`Data: ${data}`);
+        } catch (error) {
+            console.error(error);
+        }
+        }
+    };
+
+    // Function for updating message value on smart contract
+  const setMessage = async () => {
+        if (!message) return;
+        if (typeof window.ethereum !== "undefined") {
+        await requestAccount();
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await web3Provider.getSigner();
+        const contract = new ethers.Contract(
+            messengerContractAddress,
+            Messenger.abi,
+            signer
+        );
+        const transaction = await contract.setMessage(message);
+        await transaction.wait();
+          setMessageValue("");
+          getMessage();
+          console.log("message value is: ", message);
+        }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="container">
+      <button onClick={getMessage}>Message</button>
+      <button onClick={setMessage}>Send message</button>
 
-      <div className="ticks"></div>
+      <input
+        onChange={(e) => setMessageValue(e.target.value)}
+        placeholder="Write your message here..."
+      />
+    </div>
+  );
+};
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
-
-export default App
+export default App;
